@@ -70,13 +70,8 @@ library(tidyverse)
 
 
 ```{r echo=FALSE}
-github_url <- "https://github.com/uvastatlab/phdplus/raw/master/data/albemarle_homes.rds"
+github_url <- "https://github.com/clayford/DataVisualizationR/raw/master/albemarle_homes_2020.rds"
 homes <- readRDS(url(github_url))
-vars <- c("CHARLOTTESVILLE", "CROZET", "EARLYSVILLE", 
-          "KESWICK", "SCOTTSVILLE", "NORTH GARDEN")
-homes <- homes %>% 
-  filter(city %in% vars)
-homes$city <- droplevels(homes$city)
 set.seed(1)
 homes <- homes %>% sample_frac(size = 0.08)
 
@@ -86,9 +81,7 @@ Some variables of interest:
 
 - total value of home (totalvalue)
 - finished square feet (finsqft)
-- number of bedrooms (bedroom)
-- city where house is located (city)
-- whether or not house has a fireplace (fp)
+- high school district in which house is located (hsdistrict)
 
 Note: the following examples use a sample of the homes data.
 
@@ -97,47 +90,19 @@ Note: the following examples use a sample of the homes data.
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 library(ggplot2) # or library(tidyverse)
 ggplot(homes, aes(x=finsqft, y=totalvalue, 
-                 color=city)) + geom_point() 
+                 color=hsdistrict)) + geom_point() 
 ```
 
-
-
-## scatter plot colored and shaped by city
-
-```{r, message=FALSE, fig.height=3, fig.width=6}
-ggplot(homes, aes(x=finsqft, y=totalvalue, 
-                 color=city, shape=city)) + 
-  geom_point() 
-
-```
-
-
-## scatter plot colored by condition, sized by Bedroom
-
-```{r, message=FALSE, fig.height=3.25, fig.width=6}
-ggplot(filter(homes, city == "SCOTTSVILLE"), 
-       aes(x=finsqft, y=totalvalue,
-           color=condition, size=bedroom)) + 
-  geom_point() 
-
-```
 
 ## add multiple geoms (points and smooth line)
 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
-ggplot(homes, aes(x=finsqft, y=totalvalue, color=city)) + 
-  geom_point() + 
+ggplot(homes, aes(x=finsqft, y=totalvalue, 
+                  color=hsdistrict)) + geom_point() + 
   geom_smooth()
 
 ```
 
-## boxplot (statistical transformation)
-
-```{r, message=FALSE, fig.height=3, fig.width=6}
-ggplot(homes, aes(x=city, y=finsqft)) + 
-  geom_boxplot() 
-
-```
 
 ## Moving beyond `ggplot` + `geoms`
 
@@ -159,7 +124,7 @@ Examples:
 ## `facet_wrap` 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 ggplot(homes, aes(x=finsqft, y=totalvalue)) + 
-  geom_point() + facet_wrap(~ city)
+  geom_point() + facet_wrap(~ hsdistrict)
 
 ```
 
@@ -167,7 +132,7 @@ ggplot(homes, aes(x=finsqft, y=totalvalue)) +
 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 ggplot(homes, aes(x=finsqft, y = stat(density))) +
-  geom_histogram() + facet_grid(city ~ .) 
+  geom_histogram() + facet_grid(hsdistrict ~ .) 
 
 
 
@@ -185,20 +150,11 @@ ggplot(homes, aes(x=finsqft, y = stat(density))) +
 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 ggplot(homes, aes(x=finsqft, y=totalvalue, 
-                 color=city)) + geom_point() +
+                 color=hsdistrict)) + geom_point() +
   coord_cartesian(ylim = c(1e5, 3e5))
 
 ```
 
-## flip coordinate axes
-
-```{r, message=FALSE, fig.height=3, fig.width=6}
-ggplot(homes, aes(x=city, y=finsqft)) + 
-  geom_boxplot() + 
-  coord_flip()
-
-
-```
 
 ## Customizing scales
 
@@ -217,24 +173,11 @@ ggplot(homes, aes(x=city, y=finsqft)) +
 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 ggplot(homes, aes(x=finsqft, y=totalvalue, 
-                 color=city)) + geom_point() +
+                 color=hsdistrict)) + geom_point() +
   scale_y_continuous(labels = scales::dollar) +
   scale_x_continuous(labels = scales::comma)
 
 ```
-
-## update scale for color
-
-```{r, message=FALSE, fig.height=3, fig.width=6}
-ggplot(homes, aes(x=finsqft, y=totalvalue, 
-                 color=factor(fp))) + geom_point() +
-  scale_color_manual(name="Fireplace",
-                     labels = c("No fireplace", "At least one fireplace"),
-                     values=c("red","blue"))
-
-
-```
-
 
 
 ## Update themes and labels
@@ -250,7 +193,7 @@ ggplot(homes, aes(x=finsqft, y=totalvalue,
 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 ggplot(homes, aes(x=finsqft, y=totalvalue, 
-                 color = city)) + geom_point() +
+                 color = hsdistrict)) + geom_point() +
   theme_minimal()
 
 
@@ -261,7 +204,7 @@ ggplot(homes, aes(x=finsqft, y=totalvalue,
 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 ggplot(homes, aes(x=finsqft, y=totalvalue, 
-                 color = city)) + geom_point() +
+                 color = hsdistrict)) + geom_point() +
   labs(title="Total Value versus Finished Square Feet", 
        x="Finished Square Feet", y="Total Value (USD)") 
 
@@ -274,7 +217,7 @@ ggplot(homes, aes(x=finsqft, y=totalvalue,
 - Can do a lot with `ggplot(data, aes()) + geom`!
 - Data must be a data frame (not a matrix or collection of vectors)
 - The `ggplot2` documentation has many good examples
-- Prepare to invest some time if you want master ggplot2; [the RStudio ggplot2 cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf) can help.
+- Prepare to invest some time if you want master ggplot2; [the RStudio ggplot2 cheat sheet](https://rstudio.com/wp-content/uploads/2016/11/ggplot2-cheatsheet-2.1.pdf) can help.
 
 
 Let's go to R!
