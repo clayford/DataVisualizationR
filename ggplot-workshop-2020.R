@@ -19,7 +19,7 @@
 library(tidyverse)
 library(scales)
 library(gridExtra)
-
+library(plotly)
 
 # Data --------------------------------------------------------------------
 
@@ -34,14 +34,17 @@ library(gridExtra)
 
 # We need to use the url() function to open the connection to the web site
 # hosting the file. 
-URL <- "http://people.virginia.edu/~jcf2d/data/albemarle_homes.rds"
+URL <- "https://github.com/clayford/DataVisualizationR/raw/master/albemarle_homes_2020.rds"
 homes <- readRDS(file = url(URL))
-homes <- readRDS(file = "albemarle_homes_2020.rds")
 
 # Let's review what we have.
 str(homes) 
 glimpse(homes)
 names(homes)
+
+
+# Map of census tracts
+# https://www2.census.gov/geo/maps/dc10map/tract/st51_va/c51003_albemarle/DC10CT_C51003_001.pdf
 
 
 # One Variable - Continuous -----------------------------------------------
@@ -66,8 +69,9 @@ ggplot(homes, aes(x=finsqft)) + geom_histogram(binwidth=250)
 ggplot(homes, aes(x=finsqft)) + geom_freqpoly(bins = 40)
 ggplot(homes, aes(x=finsqft)) + geom_freqpoly(binwidth = 250)
 
-# We can map city to color to get freq polygon for all cities
-ggplot(homes, aes(x=finsqft, color = city)) + geom_freqpoly(bins = 40)
+# We can map high school district to color to get freq polygon for all high
+# school districts
+ggplot(homes, aes(x=finsqft, color = hsdistrict)) + geom_freqpoly(bins = 40)
 
 
 # To create a "true" histogram with density instead of count, (ie, the area
@@ -81,43 +85,44 @@ ggplot(homes, aes(x=finsqft, y=stat(density))) +
 
 # The reason we might want a "True" histogram is to compare distributions with
 # different counts.
-ggplot(homes, aes(x=finsqft, y=stat(density), color = city)) + 
+
+# finsqft by condition of home
+ggplot(homes, aes(x=finsqft, color = condition)) + 
   geom_freqpoly(binwidth=500) 
 
+# finsqft by condition of home - True histogram
+ggplot(homes, aes(x=finsqft, y=stat(density), color = condition)) + 
+  geom_freqpoly(binwidth=500) 
 
-# facet by city, zoom in on plot (x-axis 500 - 5000)
-ggplot(homes, aes(x=finsqft)) +
-  geom_histogram(binwidth = 200) +
-  facet_wrap(~ city) +
-  coord_cartesian(xlim = c(500,5000))
+# This data might be better presented in separate plots
+ggplot(homes, aes(x=finsqft, y=stat(density))) + 
+  geom_freqpoly(binwidth=500) +
+  facet_wrap(~condition)
 
-# take out Cville since it's do big compared to others
-ggplot(filter(homes, city != "CHARLOTTESVILLE"), aes(x=finsqft)) +
-  geom_histogram(binwidth = 200) +
-  facet_wrap(~ city) +
-  coord_cartesian(xlim = c(500,5000))
-
-# Or leave in Cville and use density to compare distributions
-ggplot(homes, aes(x=finsqft, y = stat(density))) +
-  geom_histogram(binwidth = 200) +
-  facet_wrap(~ city) +
-  coord_cartesian(xlim = c(500,5000))
+# And we might want to zoom in on the x-axis
+ggplot(homes, aes(x=finsqft, y=stat(density))) + 
+  geom_freqpoly(binwidth=500) +
+  facet_wrap(~condition) +
+  coord_cartesian(xlim = c(0,3000))
 
 
 # YOUR TURN #1 ------------------------------------------------------------
 
 # (1) Create a "true" histogram of totalvalue, the total value of the home. That
 # is, set y = stat(density). Set bins = 150.
+ggplot(homes, aes(x = totalvalue, y = stat(density))) +
+  geom_histogram(bins = 150)
 
-
-
-# (2) repeat #1 but now also facet by zip
-
-
+# (2) repeat #1 but now also facet by hsdistrict
+ggplot(homes, aes(x = totalvalue, y = stat(density))) +
+  geom_histogram(bins = 150) +
+  facet_wrap(~hsdistrict)
 
 # (3) repeat #3 but now also zoom in on x-axis from $0 to $1,000,000
-
-
+ggplot(homes, aes(x = totalvalue, y = stat(density))) +
+  geom_histogram(bins = 150) +
+  facet_wrap(~hsdistrict) +
+  coord_cartesian(xlim = c(0,1e6))
 
 
 
@@ -133,7 +138,7 @@ ggplot(homes, aes(x=condition)) + geom_bar()
 # Example: create a data frame of condition counts
 hc <- homes %>% 
   group_by(condition) %>% 
-  tally()
+  count()
 hc
 
 ggplot(hc, aes(x = condition, y = n)) + geom_col()
@@ -206,13 +211,15 @@ ggplot(homes, aes(x=condition, fill=factor(fp))) +
 
 # YOUR TURN #2 ------------------------------------------------------------
 
-# (1) Create a barplot of counts for zip. Tip: make zip a factor!
-
+# (1) Create a barplot of counts for middle school district. 
+ggplot(homes, aes(x = msdistrict)) + geom_bar()
 
 
 # (2) Create a stacked proportional bar chart (ie, set position = "fill") for
-# zip using cooling as the fill variable.
-
+# msdistrict using cooling (No Central Air vs. Central Air) as the fill
+# variable: fill = factor(cooling)
+ggplot(homes, aes(x = msdistrict, fill = factor(cooling))) + 
+  geom_bar(position = "fill")
 
 
 # (3) The following code attempts to show a proportional bar plot of number of
@@ -252,34 +259,40 @@ ggplot(homes, aes(x=finsqft, y=totalvalue)) +
 # Another approach is to use facets: break the data into subsets 
 ggplot(homes, aes(x=finsqft, y=totalvalue)) + 
   geom_point() +
-  facet_wrap(~ city)
+  facet_wrap(~ hsdistrict)
 
 # We can also zoom in on plot
 ggplot(homes, aes(x=finsqft, y=totalvalue)) + 
   geom_point(shape = 1) +
-  facet_wrap(~ city) +
+  facet_wrap(~ hsdistrict) +
   coord_cartesian(xlim = c(0,3000),ylim = c(0,1e6))
 
 # We can also map the color of points to a variable in our data.
 ggplot(homes, aes(x=finsqft, y=totalvalue, color=cooling)) + 
   geom_point(shape = 1) +
-  facet_wrap(~ city) +
-  coord_cartesian(xlim = c(0,3000),ylim = c(0,1e6))
+  facet_wrap(~ hsdistrict) +
+  coord_cartesian(xlim = c(0,3000),ylim = c(0,1e6)) 
 
 
 
 # YOUR TURN #3 ------------------------------------------------------------
 
 # (1) Plot age vs. finsqft with geom_point(). Put finsqft on the y axis. 
-
+ggplot(homes, aes(x = age, y = finsqft)) +
+  geom_point()
 
 
 # (2) Repeat 1 but now also zoom in on the x and y axis. Look at the last 100
 # years for houses with less than 5000 finsqft. Also, set shape = 1.
-
+ggplot(homes, aes(x = age, y = finsqft)) +
+  geom_point(shape = 1) +
+  coord_cartesian(xlim = c(0,100), ylim = c(0,5000))
 
 
 # (3) Repeat 2 but now also map color of points to fp; Tip: make fp a factor
+ggplot(homes, aes(x = age, y = finsqft, color = factor(fp))) +
+  geom_point(shape = 1) +
+  coord_cartesian(xlim = c(0,100), ylim = c(0,5000))
 
 
 
@@ -315,7 +328,7 @@ h + aes(x = condition) +
 # Let's look again at totalvalue vs finsqft:
 ggplot(homes, aes(x=finsqft, y=totalvalue)) + 
   geom_point() +
-  facet_wrap(~ city)
+  facet_wrap(~ hsdistrict)
 
 # The y-axis scale would look better formatted as dollar amounts. The scales
 # package can help with this. It has functions designed for this type of
@@ -326,7 +339,7 @@ ggplot(homes, aes(x=finsqft, y=totalvalue)) +
 
 p2 <- ggplot(homes, aes(x=finsqft, y=totalvalue)) + 
   geom_point(alpha=1/6) +
-  facet_wrap(~ city) + 
+  facet_wrap(~ hsdistrict) + 
   scale_y_continuous(labels=dollar) + 
   scale_x_continuous(labels=comma)
 p2
@@ -371,12 +384,16 @@ p2 +
 
 # YOUR TURN #4 ------------------------------------------------------------
 
-# Plot totalvalue vs lotsize, with totalvalue on y axis. 
+# Create a scatterplot of totalvalue vs lotsize, with totalvalue on y axis. 
 # - add a smooth
 # - zoom in on plot: x-axis (0, 10) y-axis (0, 1e6)
 # - Fix the y-axis to show the amount in dollars. 
 
-
+ggplot(homes, aes(x = lotsize, y = totalvalue)) + 
+  geom_point() +
+  geom_smooth() +
+  coord_cartesian(xlim = c(0,10), ylim = c(0, 1e6)) +
+  scale_y_continuous(labels = dollar)
 
 
 
@@ -399,12 +416,7 @@ ggplot(homes, aes(x=factor(fullbath), y=totalvalue)) +
   geom_boxplot() + 
   scale_y_continuous(labels=dollar)
 
-# The expensive homes have rendered this boxplot practically useless. We could 
-# "subset" the data by changing the y-axis limits using the limits argument in
-# scale_y_continuous; notice the warning message
-ggplot(homes, aes(x=fullbath, y=totalvalue, group = fullbath)) + 
-  geom_boxplot() + 
-  scale_y_continuous(labels=dollar, limits = c(1,1e6))
+# The expensive homes have rendered this boxplot practically useless. 
 
 # Another option is to create a stripchart, which is basically a 
 # scatterplot in one dimension. We can do that with geom_jitter() which is 
@@ -417,31 +429,27 @@ ggplot(homes, aes(x=fullbath, y=totalvalue, group = fullbath)) +
   scale_y_continuous(labels=dollar) +
   coord_cartesian(ylim = c(0,1e6), xlim = c(1,5))
 
-# investigate the line of homes with 4 fullbaths less than $250,000
-# zoom in 4 full baths, under $250,000
-ggplot(homes, aes(x=fullbath, y=totalvalue, group = fullbath)) + 
-  geom_jitter(width = 0.01, height = 0, alpha = 1/5) + 
-  scale_y_continuous(labels=dollar) +
-  coord_cartesian(ylim = c(0,250000), xlim = 4)
-
-# look at records
-subset(homes, fullbath == 4 & totalvalue < 150000) %>% 
-  arrange(desc(totalvalue)) %>% 
-  View()
-
 
 
 # YOUR TURN #5 ------------------------------------------------------------
 
 
-# (1) Make a boxplot totalvalue by zip. Tip: use factor(zip)
+# (1) Make a boxplot totalvalue by msdistrict. 
+ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
+  geom_boxplot()
 
 
-
-# (2) Make a stripchart of totalvalue by zip. Tip: use factor(zip)
+# (2) Make a stripchart of totalvalue by totalvalue.
 # - in geom_jitter() set width = 0.4 and alpha = 1/5
-# - format y axis as dollar and set limits to 0 - $1,000,000
+# - format y axis as dollar 
+# - zoom in on y axis: 0 - $1,000,000
 
+ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
+  geom_jitter(width = 0.4, alpha = 1/5) +
+  scale_y_continuous(labels = dollar) +
+  coord_cartesian(ylim = c(0,1e6))
+  
+  
 
 
 # Plotting two discrete integer variables ---------------------------------
@@ -455,9 +463,8 @@ ggplot(homes, aes(x=bedroom,y=fullbath)) + geom_jitter()
 
 # scales could be better; minor_breaks=NULL turns off the minor grid lines 
 ggplot(homes, aes(x=bedroom,y=fullbath)) + geom_jitter(alpha=1/5) +
-  scale_x_continuous(breaks=0:20, minor_breaks=NULL) +
-  scale_y_continuous(breaks=0:14, minor_breaks=NULL)
-
+  scale_x_continuous(breaks=0:12, minor_breaks=NULL) +
+  scale_y_continuous(breaks=0:9, minor_breaks=NULL)
 
 
 # Line Graphs -------------------------------------------------------------
@@ -485,22 +492,25 @@ ggplot(years, aes(x=yearbuilt, y=n)) +
   labs(x="Year", y="Number of Homes")
 
 
-# what years were the spikes?
-filter(years, n > 800)
 
-# we can add the year to the plot using annotate()
-ggplot(years, aes(x=yearbuilt, y=n)) + 
+# create an interactive plot ----------------------------------------------
+
+# The plotly package provides a convenient function called ggplotly() that will
+# quickly render an interactive ggplot graphic.
+
+# Example: make our previous plot interactive
+p <- ggplot(years, aes(x=yearbuilt, y=n)) + 
   geom_line() +
   scale_x_continuous(breaks=seq(1700,2000,50)) +
-  labs(x="Year",y="Number of Homes") +
-  annotate("text", x = c(1973, 2004), y = c(900, 870), label = c("1973","2004")) 
+  labs(x="Year", y="Number of Homes")
+ggplotly(p)
 
-# or add the count
-ggplot(years, aes(x=yearbuilt, y=n)) + 
-  geom_line() +
-  scale_x_continuous(breaks=seq(1700,2000,50)) +
-  labs(x="Year",y="Number of Homes") +
-  annotate("text", x = c(1973, 2004), y = c(900, 870), label = c("883","842")) 
+# Now move your mouse and hover over the plot.
+
+# see https://plotly-r.com for a whole book on using plotly to make interactive
+# web-based data visualizations
+
+# see also https://plot.ly/r/ for basic tutorials
 
 
 # Plotting with two data frames -------------------------------------------
@@ -514,32 +524,29 @@ ggplot(homes, aes(x=yearbuilt, y=totalvalue)) +
   geom_point(position=position_jitter(w=0.2,h=0), shape=".") +
   coord_cartesian(xlim=c(1950,2016), ylim=c(0,1e6))
 
-# Let's say we wanted to plot on top of that graph the mean and median 
-# totalvalue by year. First we need to calculate the mean and median by year.
-# Here's one way to do it using dplyr:
+# Let's say we wanted to plot on top of that graph the median totalvalue by
+# year. First we need to calculate the median by year. Here's one way
+# to do it using dplyr:
 
 homeValues <- homes %>% 
   group_by(yearbuilt) %>% 
-  summarize(mean_totalvalue = mean(totalvalue),
-            median_totalvalue = median(totalvalue))
+  summarize(median_totalvalue = median(totalvalue))
 homeValues
 
-# Each geom_xxx() function allows you to supply them with a separate data frame 
-# and mappings. Below notice the two geom_line() functions each reference the 
-# homeValues data frame and provide a different mapping to the y aesthetic. Also
-# notice we have swap the order of data and aesthesics. 
+# Each geom_xxx() function allows you to supply them with a separate data frame
+# and mappings. Below notice the geom_line() function references the homeValues
+# data frame and provide a different mapping to the y aesthetic. Also notice we
+# have swap the order of data and aesthesics.
 
 ggplot(homes, aes(x=yearbuilt, y=totalvalue)) + 
   geom_point(position=position_jitter(w=0.2,h=0), shape=".") +
-  geom_line(aes(y = mean_totalvalue, color = "mean"), homeValues) +
-  geom_line(aes(y = median_totalvalue, color = "median"), homeValues) +
-  coord_cartesian(xlim=c(1950,2016), ylim=c(0,1e6)) +
-  scale_color_manual("Summary", values = c("blue", "red"))
+  geom_line(aes(y = median_totalvalue), homeValues, color = "red", size = 2) +
+  coord_cartesian(xlim=c(1950,2016), ylim=c(0,1e6)) 
 
 # Another example
 
-# Boxplot of totalvalues by city for homes $1,000,000 or less
-ggplot(homes, aes(x = city, y = totalvalue)) +
+# Boxplot of totalvalues by middle school district for homes $1,000,000 or less
+ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
   geom_boxplot() +
   coord_cartesian(ylim = c(0,1e6))
 
@@ -548,7 +555,7 @@ ggplot(homes, aes(x = city, y = totalvalue)) +
 # First we calculate it. Notice we create two versions, one numeric and one 
 # formatted in dollar amounts using the dollar function from the scales package.
 homeMedians <- homes %>% 
-  group_by(city) %>% 
+  group_by(msdistrict) %>% 
   summarize(medianValue = median(totalvalue)) %>% 
   mutate(medianValueD = dollar(medianValue))
 
@@ -559,7 +566,7 @@ homeMedians
 # data will be mapped to the text label, and that we add 25,000 to the 
 # positioning so the label is above the median line. (that took some trial and
 # error)
-ggplot(homes, aes(x = city, y = totalvalue)) +
+ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
   geom_boxplot(alpha = 1/4) +
   geom_text(aes(label = medianValueD, y = medianValue + 25000), homeMedians) +
   coord_cartesian(ylim = c(0,1e6))
@@ -603,56 +610,39 @@ prevTheme <- theme_set(theme_bw())
 
 ggplot(homes, aes(x=finsqft)) + geom_histogram(bins = 40)
 
-ggplot(homes, aes(x=city, y = finsqft)) + geom_boxplot()
+ggplot(homes, aes(x=msdistrict, y = finsqft)) + geom_boxplot()
 
 
 # To restore
 theme_set(prevTheme)
 
 # verify
-ggplot(homes, aes(x=city, y = finsqft)) + geom_boxplot()
+ggplot(homes, aes(x=msdistrict, y = finsqft)) + geom_boxplot()
 
 # see package ggthemes for more themes!
 # install.packages("ggthemes")
 library(ggthemes)
 
 # Wall Street Journal theme
-ggplot(homes, aes(x=city, y = finsqft)) + 
+ggplot(homes, aes(x=msdistrict, y = finsqft)) + 
   geom_boxplot() + 
   theme_wsj()
 
 # fivethirtyeight.com theme
-ggplot(homes, aes(x=city, y = finsqft)) + 
+ggplot(homes, aes(x=msdistrict, y = finsqft)) + 
   geom_boxplot() + 
   theme_fivethirtyeight()
 
 # Tufte's theme (based on The Visual Display of Quantitative Information)
-ggplot(homes, aes(x=city, y = finsqft)) + 
+ggplot(homes, aes(x=msdistrict, y = finsqft)) + 
   geom_boxplot() + 
   theme_tufte()
 
 # base R theme
-ggplot(homes, aes(x=city, y = finsqft)) + 
+ggplot(homes, aes(x=msdistrict, y = finsqft)) + 
   geom_boxplot() + 
   theme_base()
 
-
-# Appendix: making a plot interactive -------------------------------------
-
-# The plotly package allows you to quickly make a ggplot interactive.
-# Use the ggplotly() function.
-# First install plotly
-# install.packages('plotly')
-library(plotly)
-
-# Save your ggplot and then run the ggplotly() function on your saved ggplot
-# object. Example:
-p <- ggplot(filter(homes, city == "SCOTTSVILLE"), aes(x = finsqft, y = totalvalue)) +
-  geom_point()
-ggplotly(p)
-
-# Hover your mouse over the plot to see point values; notice the menu in the top
-# of the plot.
 
 
 # Appendix: Labelling facets ----------------------------------------------
@@ -661,25 +651,26 @@ ggplotly(p)
 # We can use the labeller argument and associated labeller functions to modify
 # the labels of facets.
 
-# Let's create a 3 x 6 grid of finsqft vs Total Value by city and Condition.
-# First we'll subset the data.
-homes2 <- subset(homes, totalvalue < 1e6 & condition %in% c("Average","Good","Excellent"))
+# Let's create a 3 x 6 grid of finsqft vs Total Value by hsdistrict and
+# Condition. First we'll subset the data.
+homes2 <- homes %>% filter(totalvalue < 1e6 & 
+                             condition %in% c("Average","Good","Excellent"))
 
 ggplot(homes2, aes(x = finsqft, y = totalvalue)) +
   geom_point(alpha = 1/5) +
-  facet_grid(condition ~ city)
+  facet_grid(condition ~ hsdistrict)
 
 # labeller = label_both adds the variable name and value
 ggplot(homes2, aes(x = finsqft, y = totalvalue)) +
   geom_point(alpha = 1/5) +
-  facet_grid(condition ~ city, labeller = label_both)
+  facet_grid(condition ~ hsdistrict, labeller = label_both)
 
 # We use the labeller function with the labeller argument to control labelling
-# for each facet. For example, wrap city name after 10 characters and show both
+# for each facet. For example, wrap high school name after 10 characters and show both
 # variable and value label for Condition.
 ggplot(homes2, aes(x = finsqft, y = totalvalue)) +
   geom_point(alpha = 1/5) +
-  facet_grid(condition ~ city, labeller = labeller(city = label_wrap_gen(10),
+  facet_grid(condition ~ hsdistrict, labeller = labeller(hsdistrict = label_wrap_gen(10),
                                                    condition = label_both))
 
 
@@ -719,7 +710,7 @@ display.brewer.all(type = "div")
 # View the palette (optional)
 display.brewer.all(type = "seq", select = "Blues")
 # Use the palette in a plot
-ggplot(subset(homes, totalvalue < 1e6), 
+ggplot(filter(homes, totalvalue < 1e6), 
        aes(x = totalvalue, fill = condition)) + 
   geom_histogram() +
   scale_fill_brewer(palette = "Blues")
@@ -728,8 +719,8 @@ ggplot(subset(homes, totalvalue < 1e6),
 # View the palette (optional)
 display.brewer.all(type = "qual", select = "Accent")
 # Use the palette in a plot
-ggplot(subset(homes, totalvalue < 1e6 & YearBuilt > 0), 
-       aes(x = YearBuilt, fill = city)) + 
+ggplot(filter(homes, totalvalue < 1e6 & yearbuilt > 0), 
+       aes(x = yearbuilt, fill = hsdistrict)) + 
   geom_histogram() +
   scale_fill_brewer(palette = "Accent")
 
@@ -745,7 +736,7 @@ homes <- mutate(homes, finsqftZ = scale(finsqft)[,1]) %>%
                         include.lowest = TRUE))
 # Use the palette in a plot
 ggplot(subset(homes, totalvalue < 1e6), 
-       aes(x = city, fill = finsqftZ)) +
+       aes(x = hsdistrict, fill = finsqftZ)) +
   geom_bar(position = "fill") +
   scale_fill_brewer("Size of House", type = "div", palette = "PiYG")
 
@@ -760,7 +751,7 @@ ggplot(subset(homes, totalvalue < 1e6),
 
 # Example 1: Using scale_color_manual with specific values for a categorical
 # variable
-ggplot(subset(homes, totalvalue < 1e6 & 
+ggplot(filter(homes, totalvalue < 1e6 & 
                 condition %in% c("Average","Good","Excellent","Fair")), 
        aes(x = finsqft, y = totalvalue, color = condition)) +
   geom_point() +
@@ -771,7 +762,7 @@ ggplot(subset(homes, totalvalue < 1e6 &
 
 # Example 2: Using scale_color_gradientn with continuous data to create a custom
 # 4-color gradient.
-ggplot(subset(homes, totalvalue < 1e6 & 
+ggplot(filter(homes, totalvalue < 1e6 & 
                 condition %in% c("Average","Good","Excellent","Fair")), 
        aes(x = condition, y = totalvalue, color = finsqft)) +
   geom_jitter(height = 0) +
@@ -781,7 +772,7 @@ ggplot(subset(homes, totalvalue < 1e6 &
 
 # Example 3: Using scale_color_gradient with continuous data to create a custom
 # 2-color, low-high gradient
-ggplot(subset(homes, totalvalue < 1e6 & 
+ggplot(filter(homes, totalvalue < 1e6 & 
                 condition %in% c("Average","Good","Excellent","Fair")), 
        aes(x = condition, y = totalvalue, color = finsqft)) +
   geom_jitter(height = 0) +
@@ -792,7 +783,7 @@ ggplot(subset(homes, totalvalue < 1e6 &
 
 # Example 4: Using scale_color_gradient2 with continuous data to create a custom
 # diverging color gradient. Note we scale finsqft so average is 0.
-ggplot(subset(homes, totalvalue < 1e6 & 
+ggplot(filter(homes, totalvalue < 1e6 & 
                 condition %in% c("Average","Good","Excellent","Fair")), 
        aes(x = condition, y = totalvalue, color = scale(finsqft))) +
   geom_jitter(height = 0) +
@@ -869,7 +860,6 @@ ggplot(Indometh, aes(x=time,y=conc)) +
 
 
 # Appendix: Log Transformations in scatter plots --------------------------
-
 
 
 # Skewed positive data are often log transformed. It helps "squeeze together"
@@ -960,84 +950,43 @@ library(GGally)
 # Beware: these functions can be slow
 
 # the ggpairs function produces a pairwise comparison of multivariate data. 
-homes %>% select(finsqft, LotSize, totalvalue, Bedroom, fp) %>% ggpairs()
+homes %>% select(finsqft, lotsize, totalvalue, bedroom, fp) %>% 
+  ggpairs()
 
 # ggscatmat is similar to ggpairs but only works for purely numeric multivariate
 # data.
-homes %>% select(finsqft, LotSize, totalvalue, Bedroom, fp) %>% 
+homes %>% select(finsqft, lotsize, totalvalue, bedroom, fp) %>% 
   ggscatmat(columns = 1:3, color = "fp")
 
 
 
-# Appendix: gganimate -----------------------------------------------------
 
-# install.packages("gganimate")
-# install.packages("gifski")
-library(gganimate)
-
-# The gganimate package allows you to create animations in ggplot. Below is a
-# simple example. We first sample 1000 records from the homes data. Next we
-# create a plot of finsqft versus totalvalue and save it as "p".
-
-samp <- homes %>% sample_n(1000) 
-p <- ggplot(samp, aes(x = finsqft, y = totalvalue, color = city)) +
-  geom_point()
-
-# Now to create the animation. The following says to transition states between
-# city letting each "state" last 1 second and the transition to last 2 seconds.
-# The last two functions cause the point to fade in and then to shrink away.
-p + transition_states(city, transition_length = 2, state_length = 1) +
-  enter_fade() +
-  exit_shrink()
-
-# Beware: these animations can take a while to render. Hence the reason we
-# sampled 1000 records instead of using all 29,000+.
-
-
-# Appendix: maps ----------------------------------------------------------
-
-# ggplot can plot maps
+# Appendix: maps with leaflet ---------------------------------------------
 
 # The following data are occurences of cougars in the US. It was downloaded from
 # Biodiversity Information Serving Our Nation (BISON),
 # http://bison.usgs.ornl.gov.
 
 URL2 <- "http://people.virginia.edu/~jcf2d/workshops/ggplot2/bison-Cougar-20150520-172801.csv"
-cougar <- read.csv(URL2)
+cougar <- read_csv(URL2)
 
-# install.packages("maps")
-# install.packages("mapproj")
+# drop records if they're missing data for Longitude.
+cougar <- filter(cougar, !is.na(decimalLongitude))  
 
-library(maps)
-library(mapproj) # for the "polyconic" option
+# Load the leaflet package
+library(leaflet)
 
-# Let's plot a map that shows occurences of courgars in the US and the type of occurence.
+# quickly make a map of the world
+leaflet() %>% 
+  addProviderTiles("CartoDB")
 
-# first create a data frame of map data; "state" is the name of a map provided
-# by the maps package.
-states <- map_data("state")
+# Make a map with markers labeling cougar occurences. Notice we use the tilde
+# (~) to refer to columns in the cougar data frame
+leaflet() %>% 
+  addProviderTiles("CartoDB") %>% 
+  addMarkers(data = cougar, 
+             lng = ~decimalLongitude, 
+             lat = ~decimalLatitude,
+             popup = ~paste0(basisOfRecord, "<br>", ITIScommonName))
 
-# rename providedState to "region" and make lower case for purposes of merging
-cougar$region <- tolower(cougar$providedState)
-
-# merge states and courgar data frames by region, and also drop records if
-# they're missing data for decimalLongitude.
-cougmap <- filter(cougar, !is.na(decimalLongitude)) %>% 
-  inner_join(states, by = "region")
-
-# now we're ready to plot! Map longitude and latitude to x and y aesthetics;
-# The borders function draws the state borders;
-# the coord_map("polyconic") function makes the map look curvy, like a globe;
-# Give it a second...
-ggplot(cougmap, aes(x=long, y=lat)) +
-  borders("state") +
-  geom_point(aes(x = decimalLongitude, y=decimalLatitude, color=basisOfRecord)) +
-  coord_map("polyconic")
-
-# saving graphs as images
-
-# use ggsave(). It saves the last plot according to your file extension.
-ggsave("cougars.jpg", width=10, height=5)
-
-
-
+# Scroll or double-click to zoom in on map. Click a marker to view information
