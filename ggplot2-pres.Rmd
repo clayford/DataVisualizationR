@@ -85,7 +85,7 @@ Some variables of interest:
 
 Note: the following examples use a sample of the homes data.
 
-## scatter plot colored by city
+## scatter plot colored by high school district
 
 ```{r, message=FALSE, fig.height=3, fig.width=6}
 library(ggplot2) # or library(tidyverse)

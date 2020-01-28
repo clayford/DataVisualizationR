@@ -17,4 +17,8 @@ table(homes$condition)
 homes <- homes %>% filter(condition != "None")
 homes$condition <- droplevels(homes$condition)
 
+homes$lastsaledate1 <- NULL
+homes$landuse <- NULL
+homes$tmp <- NULL
+
 saveRDS(homes, "albemarle_homes_2020.rds")
