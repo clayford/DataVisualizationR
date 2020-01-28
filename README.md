@@ -12,6 +12,7 @@ R is available to everyone. The only prior knowledge assumed for this workshop i
 ## Workshop materials
 
 Download the zip file and extract the files. It contains an R script and a PDF slide deck.
+[DataVisualizationR.zip](https://github.com/clayford/DataVisualizationR/raw/master/DataVisualizationR.zip)
 
 ## Supplemental materials
 
