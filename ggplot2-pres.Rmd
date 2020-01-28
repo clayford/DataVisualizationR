@@ -239,6 +239,8 @@ http://www.cookbook-r.com/Graphs/
 **Official ggplot2 web site**    
 https://ggplot2.tidyverse.org/
 
+**More on plotly**   
+https://plotly-r.com
 
 ## Thanks for coming
 

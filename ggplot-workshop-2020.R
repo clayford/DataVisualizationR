@@ -61,13 +61,13 @@ ggplot(homes, aes(x=finsqft)) + geom_histogram()
 
 # Try a new binwidth or bins
 ggplot(homes, aes(x=finsqft)) + geom_histogram(bins = 40)
-ggplot(homes, aes(x=finsqft)) + geom_histogram(binwidth=250)
+ggplot(homes, aes(x=finsqft)) + geom_histogram(binwidth=50)
 # try some others! Beware, setting small binwidths can tax your computer.
 
 # A frequency polygon is like a histogram, but counts are presented with lines
 # instead of bars.
 ggplot(homes, aes(x=finsqft)) + geom_freqpoly(bins = 40)
-ggplot(homes, aes(x=finsqft)) + geom_freqpoly(binwidth = 250)
+ggplot(homes, aes(x=finsqft)) + geom_freqpoly(binwidth = 50)
 
 # We can map high school district to color to get freq polygon for all high
 # school districts
@@ -105,24 +105,25 @@ ggplot(homes, aes(x=finsqft, y=stat(density))) +
   facet_wrap(~condition) +
   coord_cartesian(xlim = c(0,3000))
 
+# Finally, we can make these plots interactive with the ggplotly() function.
+# Just save the plot and use it as an argument to ggplotly()
+p <- ggplot(homes, aes(x=finsqft)) + geom_histogram(bins = 40)
+ggplotly(p)
+
 
 # YOUR TURN #1 ------------------------------------------------------------
 
-# (1) Create a "true" histogram of totalvalue, the total value of the home. That
-# is, set y = stat(density). Set bins = 150.
-ggplot(homes, aes(x = totalvalue, y = stat(density))) +
-  geom_histogram(bins = 150)
+# (1) Create a histogram of totalvalue, the total value of the home. 
+# Set bins = 100.
+
 
 # (2) repeat #1 but now also facet by hsdistrict
-ggplot(homes, aes(x = totalvalue, y = stat(density))) +
-  geom_histogram(bins = 150) +
-  facet_wrap(~hsdistrict)
+
 
 # (3) repeat #3 but now also zoom in on x-axis from $0 to $1,000,000
-ggplot(homes, aes(x = totalvalue, y = stat(density))) +
-  geom_histogram(bins = 150) +
-  facet_wrap(~hsdistrict) +
-  coord_cartesian(xlim = c(0,1e6))
+
+
+# (4) save (3) and investigate with ggplotly()
 
 
 
@@ -180,6 +181,12 @@ table(homes$fp, homes$condition) %>%
   prop.table(margin = 2) %>%           # margin = 2 means "column proportions"
   round(2)
 
+# Or use ggplotly to make an interactive plot
+p <- ggplot(homes, aes(x=condition, fill=factor(fp))) + 
+  geom_bar(position = "fill") 
+ggplotly(p)
+
+
 # How can we fix the legend title?
 # Recall that is a by-product of the fill scale. So we need to use a scale
 # function.
@@ -212,22 +219,18 @@ ggplot(homes, aes(x=condition, fill=factor(fp))) +
 # YOUR TURN #2 ------------------------------------------------------------
 
 # (1) Create a barplot of counts for middle school district. 
-ggplot(homes, aes(x = msdistrict)) + geom_bar()
+
 
 
 # (2) Create a stacked proportional bar chart (ie, set position = "fill") for
 # msdistrict using cooling (No Central Air vs. Central Air) as the fill
 # variable: fill = factor(cooling)
-ggplot(homes, aes(x = msdistrict, fill = factor(cooling))) + 
-  geom_bar(position = "fill")
+
 
 
 # (3) The following code attempts to show a proportional bar plot of number of
 # bedrooms (1-5) by city, but it doesn't work. Can you fix it?
-ggplot(filter(homes, bedroom %in% 1:5), 
-       aes(x=city, fill = factor(bedroom))) + 
-  geom_bar(position = fill) +
-  scale_fill_discrete("Bedrooms")
+
 
 
 
@@ -273,26 +276,21 @@ ggplot(homes, aes(x=finsqft, y=totalvalue, color=cooling)) +
   facet_wrap(~ hsdistrict) +
   coord_cartesian(xlim = c(0,3000),ylim = c(0,1e6)) 
 
-
+# This is another good application for ggplotly()
+p <- ggplot(homes, aes(x=finsqft, y=totalvalue)) + 
+  geom_point(shape = 1) +
+  facet_wrap(~ hsdistrict) 
+ggplotly(p)
 
 # YOUR TURN #3 ------------------------------------------------------------
 
 # (1) Plot age vs. finsqft with geom_point(). Put finsqft on the y axis. 
-ggplot(homes, aes(x = age, y = finsqft)) +
-  geom_point()
+
 
 
 # (2) Repeat 1 but now also zoom in on the x and y axis. Look at the last 100
 # years for houses with less than 5000 finsqft. Also, set shape = 1.
-ggplot(homes, aes(x = age, y = finsqft)) +
-  geom_point(shape = 1) +
-  coord_cartesian(xlim = c(0,100), ylim = c(0,5000))
 
-
-# (3) Repeat 2 but now also map color of points to fp; Tip: make fp a factor
-ggplot(homes, aes(x = age, y = finsqft, color = factor(fp))) +
-  geom_point(shape = 1) +
-  coord_cartesian(xlim = c(0,100), ylim = c(0,5000))
 
 
 
@@ -355,6 +353,7 @@ p2 +
   geom_smooth(se=FALSE, color="red") +
   geom_smooth(method="lm", se=FALSE)
 
+
 # Let's zoom in on the plots to get a closer look at what's going on in the 
 # lower left corner. We can zoom in using coord_cartesian(). Below we set the 
 # x-axis limits between 0 and 5000, and the y-axis limits between 0 and
@@ -363,6 +362,8 @@ p2 +
   geom_smooth(se=FALSE, color="red") +
   geom_smooth(method="lm", se=FALSE) +
   coord_cartesian(xlim = c(0, 5000), ylim = c(1,1e6))
+
+
 
 # To add a title we can use labs()
 p2 + 
@@ -389,11 +390,6 @@ p2 +
 # - zoom in on plot: x-axis (0, 10) y-axis (0, 1e6)
 # - Fix the y-axis to show the amount in dollars. 
 
-ggplot(homes, aes(x = lotsize, y = totalvalue)) + 
-  geom_point() +
-  geom_smooth() +
-  coord_cartesian(xlim = c(0,10), ylim = c(0, 1e6)) +
-  scale_y_continuous(labels = dollar)
 
 
 
@@ -418,12 +414,13 @@ ggplot(homes, aes(x=factor(fullbath), y=totalvalue)) +
 
 # The expensive homes have rendered this boxplot practically useless. 
 
+
 # Another option is to create a stripchart, which is basically a 
 # scatterplot in one dimension. We can do that with geom_jitter() which is 
 # basically geom_point() but with random noise added to the coordinates. Below
 # we jitter left and right, but not up and down.
 
-# Notice also I am zooming in and not subsetting data
+# Notice also I am zooming in
 ggplot(homes, aes(x=fullbath, y=totalvalue, group = fullbath)) + 
   geom_jitter(width = 0.3, height = 0, alpha = 1/5) + 
   scale_y_continuous(labels=dollar) +
@@ -435,8 +432,7 @@ ggplot(homes, aes(x=fullbath, y=totalvalue, group = fullbath)) +
 
 
 # (1) Make a boxplot totalvalue by msdistrict. 
-ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
-  geom_boxplot()
+
 
 
 # (2) Make a stripchart of totalvalue by totalvalue.
@@ -444,10 +440,6 @@ ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
 # - format y axis as dollar 
 # - zoom in on y axis: 0 - $1,000,000
 
-ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
-  geom_jitter(width = 0.4, alpha = 1/5) +
-  scale_y_continuous(labels = dollar) +
-  coord_cartesian(ylim = c(0,1e6))
   
   
 
@@ -491,26 +483,12 @@ ggplot(years, aes(x=yearbuilt, y=n)) +
   scale_x_continuous(breaks=seq(1700,2000,50)) +
   labs(x="Year", y="Number of Homes")
 
-
-
-# create an interactive plot ----------------------------------------------
-
-# The plotly package provides a convenient function called ggplotly() that will
-# quickly render an interactive ggplot graphic.
-
-# Example: make our previous plot interactive
+# Great time to use ggpl0tly()
 p <- ggplot(years, aes(x=yearbuilt, y=n)) + 
   geom_line() +
   scale_x_continuous(breaks=seq(1700,2000,50)) +
   labs(x="Year", y="Number of Homes")
 ggplotly(p)
-
-# Now move your mouse and hover over the plot.
-
-# see https://plotly-r.com for a whole book on using plotly to make interactive
-# web-based data visualizations
-
-# see also https://plot.ly/r/ for basic tutorials
 
 
 # Plotting with two data frames -------------------------------------------
@@ -540,12 +518,15 @@ homeValues
 
 ggplot(homes, aes(x=yearbuilt, y=totalvalue)) + 
   geom_point(position=position_jitter(w=0.2,h=0), shape=".") +
+  # Notice the next geom uses a new data frame
   geom_line(aes(y = median_totalvalue), homeValues, color = "red", size = 2) +
   coord_cartesian(xlim=c(1950,2016), ylim=c(0,1e6)) 
 
+
 # Another example
 
-# Boxplot of totalvalues by middle school district for homes $1,000,000 or less
+# Boxplot of totalvalues by middle school district, zoomed in on homes
+# $1,000,000 or less
 ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
   geom_boxplot() +
   coord_cartesian(ylim = c(0,1e6))
@@ -568,6 +549,7 @@ homeMedians
 # error)
 ggplot(homes, aes(x = msdistrict, y = totalvalue)) +
   geom_boxplot(alpha = 1/4) +
+  # Notice the next geom uses a new data frame
   geom_text(aes(label = medianValueD, y = medianValue + 25000), homeMedians) +
   coord_cartesian(ylim = c(0,1e6))
 
