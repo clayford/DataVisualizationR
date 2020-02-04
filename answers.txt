@@ -41,9 +41,10 @@ ggplot(homes, aes(x = msdistrict, fill = factor(cooling))) +
 
 
 # (3) The following code attempts to show a proportional bar plot of number of
-# bedrooms (1-5) by city, but it doesn't work. Can you fix it?
+# bedrooms (1-5) by msdistrict, but it doesn't work. Can you fix it?
+
 ggplot(filter(homes, bedroom %in% 1:5), 
-       aes(x=city, fill = factor(bedroom))) + 
+       aes(x=msdistrict, fill = factor(bedroom))) + 
   geom_bar(position = fill) +
   scale_fill_discrete("Bedrooms")
   

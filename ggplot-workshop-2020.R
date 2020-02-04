@@ -1,5 +1,5 @@
 # Data visualization with R 
-# Spring 2019
+# Spring 2020
 # UVa StatLab
 # Clay Ford
 
@@ -224,13 +224,17 @@ ggplot(homes, aes(x=condition, fill=factor(fp))) +
 
 # (2) Create a stacked proportional bar chart (ie, set position = "fill") for
 # msdistrict using cooling (No Central Air vs. Central Air) as the fill
-# variable: fill = factor(cooling)
+# variable: fill = cooling
 
 
 
 # (3) The following code attempts to show a proportional bar plot of number of
-# bedrooms (1-5) by city, but it doesn't work. Can you fix it?
+# bedrooms (1-5) by msdistrict, but it doesn't work. Can you fix it?
 
+ggplot(filter(homes, bedroom %in% 1:5), 
+       aes(x=msdistrict, fill = factor(bedroom))) + 
+  geom_bar(position = fill) +
+  scale_fill_discrete("Bedrooms")
 
 
 
@@ -370,7 +374,7 @@ p2 +
   geom_smooth(se=FALSE, color="red") +
   geom_smooth(method="lm", se=FALSE) +
   coord_cartesian(xlim = c(0, 5000), ylim = c(1,1e6)) +
-  labs(title = "Total Values vs Finished Sq Ft by city") 
+  labs(title = "Total Values vs Finished Sq Ft by HS District") 
 
 # Notice the title is left-aligned by default. Here's how we can center it using
 # the theme() function.
@@ -378,7 +382,7 @@ p2 +
   geom_smooth(se=FALSE, color="red") +
   geom_smooth(method="lm", se=FALSE) +
   coord_cartesian(xlim = c(0, 5000), ylim = c(1,1e6)) +
-  labs(title = "Total Values vs Finished Sq Ft by city") +
+  labs(title = "Total Values vs Finished Sq Ft by HS District") +
   theme(plot.title = element_text(hjust = 0.5))
 
 
