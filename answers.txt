@@ -48,7 +48,7 @@ ggplot(filter(homes, bedroom %in% 1:5),
   geom_bar(position = fill) +
   scale_fill_discrete("Bedrooms")
   
-  
+# Answer: set position = "fill" (add quotes)
 
 # YOUR TURN #3 ------------------------------------------------------------
 
